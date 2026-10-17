@@ -29,9 +29,15 @@ element('pause').onclick();const pausedProgress=game.hero.t;for(let i=0;i<120;i+
 console.log('PASS countdown holds racers, automatic pedaling advances, pause freezes, resume advances');
 for(const bike of game.bikes)assert(bike.position.toArray().every(Number.isFinite));
 console.log('PASS startup, 4 rider rigs, 100 physics/render-state updates, HUD writes (no browser)');
-for(const [id,pointerId] of [['left',1],['pedalBtn',2],['boostBtn',3]])element(id).handlers.pointerdown({pointerId,preventDefault(){}});
-assert(game.key.left&&game.key.pedal&&game.key.boost);element('left').handlers.pointercancel({pointerId:1});assert(!game.key.left&&game.key.pedal&&game.key.boost);
-console.log('PASS independent three-pointer state and cancellation (synthetic events; not iPhone hardware)');
+const touch=(pointerId,clientX=0,clientY=0)=>({pointerId,clientX,clientY,preventDefault(){}});
+element('stickZone').handlers.pointerdown(touch(1,100,100));element('stickZone').handlers.pointermove(touch(1,52,100));
+for(const [id,pointerId] of [['pedalBtn',2],['boostBtn',3]])element(id).handlers.pointerdown(touch(pointerId));
+assert(game.key.left>.9&&!game.key.right&&game.key.pedal&&game.key.boost,'stick left');
+element('stickZone').handlers.pointermove(touch(1,120,100));assert(game.key.right>0&&game.key.right<.5,'partial analog right '+game.key.right);
+element('stickZone').handlers.pointermove(touch(1,100,150));assert(game.key.brake&&!game.key.left&&!game.key.right,'pull down brakes');
+element('stickZone').handlers.pointermove(touch(9,0,100));assert(!game.key.left,'other pointers ignored');
+element('stickZone').handlers.pointercancel(touch(1));assert(!game.key.left&&!game.key.brake&&game.key.pedal&&game.key.boost);
+console.log('PASS ball joystick analog steer/brake plus two buttons, independent cancellation (synthetic events; not iPhone hardware)');
 game.hero.t=.99999;game.step(1/120);element('replay').onclick();for(let i=0;i<30;i++)game.worldUpdate(1/60);for(const bike of game.bikes){assert(bike.quaternion.toArray().every(Number.isFinite));assert(bike.position.toArray().every(Number.isFinite));}
 console.log('PASS replay transforms remain finite');
 const saved=JSON.parse(storage.get('sunbreak-downhill-v3'));assert.equal(saved.session.races,1);assert(saved.bests.race>0);
